@@ -17,6 +17,7 @@ h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#d9a441;fo
 .f span{position:absolute;bottom:0;left:2px;font-size:9px;color:#d9a441;letter-spacing:.1em}
 .f svg{position:absolute;left:-3%;top:-5%;width:106%;height:calc(100% - 14px + 10%);pointer-events:none;opacity:0;transition:opacity .15s}
 .f.on svg{opacity:1}
+#rs{position:fixed;inset:0;z-index:60;background:#000f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 56px) 12px calc(env(safe-area-inset-bottom,0px) + 16px)}#rs[hidden]{display:none}#ri{max-width:100%;max-height:calc(100% - 110px);object-fit:contain}#rs p{margin:0;font-size:12px;color:#aaa;text-align:center}.ra{display:flex;gap:10px}.ra[hidden],#rsh[hidden]{display:none}a.btn{font-size:13px;padding:10px 16px;border:1px solid #666;color:#ddd;text-decoration:none}#rx{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;font-size:18px;padding:8px 14px}
 #pv{position:fixed;inset:0;z-index:50;background:#000f;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 56px) 12px calc(env(safe-area-inset-bottom,0px) + 16px)}#pv[hidden]{display:none}#pi{max-width:100%;max-height:100%;object-fit:contain}#px{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;font-size:18px;padding:8px 14px}.f img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .bar{position:fixed;left:0;right:0;bottom:0;background:#000d;backdrop-filter:blur(8px);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;justify-content:center}
 button{font:inherit;font-size:13px;padding:10px 16px;border:1px solid #666;background:none;color:var(--fg);cursor:pointer}
@@ -25,6 +26,7 @@ button.p{background:#d22;border-color:#d22;color:#fff}button:disabled{opacity:.3
 </style></head><body>
 <header><h1>Provino</h1><p>Tocca i fotogrammi che ti piacciono: verranno cerchiati in rosso. Poi scarica il provino con le sole foto scelte, a bassa risoluzione.</p></header>
 <div class="sheet" id="sheet"></div>
+<div id="rs" hidden><button id="rx" aria-label="Chiudi">✕</button><img id="ri" alt="Provino"><p>Su telefono: tieni premuto sull’immagine e scegli “Salva”, oppure usa i pulsanti.</p><div class="ra"><button id="rsh" class="p">Salva / Condividi</button><a class="btn" id="rd" download="provino-selezione.jpg">Scarica</a></div></div>
 <div id="pv" hidden><button id="px" aria-label="Chiudi">✕</button><img id="pi" alt=""></div>
 <div class="bar"><span id="c">0 selezionate</span><button id="z">Azzera</button><button class="p" id="d" disabled>Scarica provino (JPG leggero)</button></div>
 <script>
@@ -42,8 +44,8 @@ function load(s){return new Promise(function(r){var i=new Image();i.onload=funct
 document.getElementById('d').onclick=async function(){
  var items=all.filter(function(x){return sel.has(x.n)}).sort(function(a,b){return a.n-b.n});
  var cols=Math.min(3,items.length),rows=Math.ceil(items.length/cols),W=600,H=400,g=24,m=48,top=110;
- var cv=document.createElement('canvas');cv.width=m*2+cols*W+(cols-1)*g;cv.height=top+m+rows*(H+g+20);
- var c=cv.getContext('2d');c.fillStyle='#0b0b0b';c.fillRect(0,0,cv.width,cv.height);
+ var cw=m*2+cols*W+(cols-1)*g,ch=top+m+rows*(H+g+20),SC=.5,cv=document.createElement('canvas');cv.width=Math.round(cw*SC);cv.height=Math.round(ch*SC);
+ var c=cv.getContext('2d');c.scale(SC,SC);c.fillStyle='#0b0b0b';c.fillRect(0,0,cw,ch);
  c.fillStyle='#ddd';c.font='600 26px Helvetica,Arial,sans-serif';c.fillText('PROVINO \u2014 SELEZIONE',m,64);
  c.fillStyle='#888';c.font='16px Helvetica,Arial,sans-serif';c.fillText(items.length+(items.length==1?' fotogramma':' fotogrammi'),m,90);
  for(var k=0;k<items.length;k++){var im=await load(items[k].s),x=m+(k%cols)*(W+g),y=top+Math.floor(k/cols)*(H+g+20);
@@ -54,5 +56,8 @@ document.getElementById('d').onclick=async function(){
   c.moveTo(x-8,y-6);c.bezierCurveTo(x+200,y-14,x+420,y-4,x+W+8,y-8);c.bezierCurveTo(x+W+12,y+120,x+W+4,y+280,x+W+10,y+H+8);
   c.bezierCurveTo(x+400,y+H+14,x+200,y+H+2,x-8,y+H+8);c.bezierCurveTo(x-12,y+250,x-4,y+120,x-8,y-6);c.stroke();
   c.fillStyle='#d9a441';c.font='14px Helvetica,Arial,sans-serif';c.fillText(String(items[k].n),x,y+H+22)}
- var o=document.createElement('canvas');o.width=Math.round(cv.width*.5);o.height=Math.round(cv.height*.5);var q=o.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(cv,0,0,o.width,o.height);var a=document.createElement('a');a.download='provino-selezione.jpg';a.href=o.toDataURL('image/jpeg',.7);a.click()};
+ cv.toBlob(function(bl){showRes(bl)},'image/jpeg',.7)};
+var rsE=document.getElementById('rs'),ri=document.getElementById('ri'),rd=document.getElementById('rd'),rsh=document.getElementById('rsh'),rU=null;
+function showRes(bl){if(rU)URL.revokeObjectURL(rU);rU=URL.createObjectURL(bl);ri.src=rU;rd.href=rU;rsE.hidden=false;var file=new File([bl],'provino-selezione.jpg',{type:'image/jpeg'});var ok=navigator.canShare&&navigator.canShare({files:[file]});rsh.hidden=!ok;rsh.onclick=function(){navigator.share({files:[file],title:'Provino'}).catch(function(){})}}
+document.getElementById('rx').onclick=function(){rsE.hidden=true};
 </script></body></html>
